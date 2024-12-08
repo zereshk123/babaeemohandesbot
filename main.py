@@ -31,7 +31,7 @@ def auth_db():
     print("پایگاه داده بررسی شد✅\n")
 
 
-token = "7808617162:AAEppm8ctY1YngqGFlVXDZYmE2Sxe3BsQdA"
+token = "7237654549:AAHp4XGqrLpJQrBO-tnxSoG6zRpnZMfI6X0"
 link_web_app = "https://alikakaee.ir/bot/"
 waiting_for_message = {}
 admin_creation_state = {}
