@@ -39,6 +39,8 @@ admin_edit_homework_state = {}
 admin_del_state = {}
 user_status = {}
 
+#test_git
+
 async def start(update: Update, context: CallbackContext) -> None:
     user_id = str(update.effective_user.id)
 
