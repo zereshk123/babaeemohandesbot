@@ -33,7 +33,7 @@ def auth_db():
     print("database checked✅\n")
 
 
-token = "7642735778:AAFS1bhAR10zLA8ZW3QcEFmjbF6pRhN2ww4"
+token = "7692555631:AAEpU6TAxLHSi_yeaH8yQND4aSKiIZNxNks"
 link_web_app = "https://alikakaee.ir/bot/"
 waiting_for_message = {}
 admin_creation_state = {}
@@ -47,7 +47,6 @@ async def start(update: Update, context: CallbackContext) -> None:
 
     inline_keyboard = [
         [InlineKeyboardButton("🌐 نمایش اطلاعیه ها 🌐",web_app={'url':f'{link_web_app}'})],
-        [InlineKeyboardButton("📝 ثبت یادآوری 📝", callback_data="set_reminder")],
         [InlineKeyboardButton("📝 نمایش تکالیف 📝", callback_data="show_homework")]
     ]
 
@@ -64,9 +63,10 @@ async def start(update: Update, context: CallbackContext) -> None:
         is_admin = cursor.fetchone()
 
         if is_admin:
-            inline_keyboard.append(
-            )
             inline_keyboard.append([InlineKeyboardButton("🟥🟥🟥🟥 دسترسی ادمین ها 🟥🟥🟥🟥", callback_data="None")])
+            inline_keyboard.append(
+                [InlineKeyboardButton("📝 ثبت یادآوری 📝", callback_data="set_reminder")]
+            )
             inline_keyboard.append([
                 InlineKeyboardButton("👨‍👦‍👦 ادمین ها 👨‍👦‍👦", callback_data="show_admins"),
                 InlineKeyboardButton("✍ ویرایش تکالیف ✍", callback_data="edit_homework")
@@ -78,11 +78,16 @@ async def start(update: Update, context: CallbackContext) -> None:
     
     inline_markup = InlineKeyboardMarkup(inline_keyboard)
 
-    await update.message.reply_text(
-        "سلام ببعی جان...\nچه کمکی از دستم بر میاد؟😁",
-        reply_markup=inline_markup,
-        reply_to_message_id=update.effective_message.id
-    )
+    if update.message:
+        await update.message.reply_text(
+            "سلام ببعی جان...\nچه کمکی از دستم بر میاد؟😁",
+            reply_markup=inline_markup
+        )
+    elif update.callback_query:  # ویرایش پیام موجود
+        await update.callback_query.message.edit_text(
+            "سلام ببعی جان...\nچه کمکی از دستم بر میاد؟😁",
+            reply_markup=inline_markup
+        )
 
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -101,40 +106,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     elif query.data == "back":
-        inline_keyboard = [
-            [InlineKeyboardButton("🌐 نمایش اطلاعیه ها 🌐", url=f'{link_web_app}')],
-            [InlineKeyboardButton("📝 نمایش تکالیف 📝", callback_data="show_homework")]
-        ]
-        inline_keyboard.append([
-            InlineKeyboardButton("™ درباره ما ™", callback_data="about_us"),
-            InlineKeyboardButton("👨‍💻 پشتیبانی 👨‍💻", callback_data="talk_admins")
-        ])
-
-        inline_markup = InlineKeyboardMarkup(inline_keyboard)
-
-        #__ دکمه های ادمین __
-        with sqlite3.connect('data.db') as connection:
-            cursor = connection.cursor()
-            cursor.execute('SELECT user_id FROM admins WHERE user_id = ?', (user_id,))
-            is_admin = cursor.fetchone()
-
-            if is_admin:
-                inline_keyboard.append([InlineKeyboardButton("🟥🟥🟥🟥 دسترسی ادمین ها 🟥🟥🟥🟥", callback_data="None")])
-                inline_keyboard.append([
-                    InlineKeyboardButton("👨‍👦‍👦 ادمین ها 👨‍👦‍👦", callback_data="show_admins"),
-                    InlineKeyboardButton("✍ ویرایش تکالیف ✍", callback_data="edit_homework")
-                ])
-                inline_keyboard.append([
-                    InlineKeyboardButton("➕ افزودن ادمین ➕", callback_data="add_admin"),
-                    InlineKeyboardButton("➖ حذف ادمین ➖", callback_data="del_admin")
-                ])
-
-        inline_markup = InlineKeyboardMarkup(inline_keyboard)
-
-        await query.edit_message_text(
-            "سلام ببعی جان...\nچه کمکی از دستم بر میاد؟😁",
-            reply_markup=inline_markup
-        )
+        await start(update, context)
         return
     
     elif query.data == "show_admins":
