@@ -39,8 +39,25 @@ admin_edit_homework_state = {}
 admin_del_state = {}
 user_status = {}
 
+async def save_user_info(user_id, username, first_name):
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT user_id FROM users WHERE user_id = ?", (user_id,))
+    is_user = cursor.fetchone()
+
+    if is_user is None:
+        cursor.execute("INSERT INTO users(user_id, username, name) VALUES (?, ?, ?)", (user_id, username, first_name))
+        conn.commit()
+    
+    conn.close()
+
 async def start(update: Update, context: CallbackContext) -> None:
     user_id = str(update.effective_user.id)
+    username = str(update.effective_user.username)
+    first_name = str(update.effective_user.first_name)
+
+    await save_user_info(user_id, username, first_name)
 
     inline_keyboard = [
         [InlineKeyboardButton("🌐 نمایش اطلاعیه ها 🌐",web_app={'url':f'{link_web_app}'})],
