@@ -33,8 +33,8 @@ def auth_db():
     print("database checked✅\n")
 
 
-token = "7808617162:AAEppm8ctY1YngqGFlVXDZYmE2Sxe3BsQdA"
-link_web_app = "http://alikakaee.ir/bot/"
+token = "7642735778:AAFS1bhAR10zLA8ZW3QcEFmjbF6pRhN2ww4"
+link_web_app = "https://alikakaee.ir/bot/"
 waiting_for_message = {}
 admin_creation_state = {}
 admin_edit_homework_state = {}
@@ -47,6 +47,7 @@ async def start(update: Update, context: CallbackContext) -> None:
 
     inline_keyboard = [
         [InlineKeyboardButton("🌐 نمایش اطلاعیه ها 🌐",web_app={'url':f'{link_web_app}'})],
+        [InlineKeyboardButton("📝 ثبت یادآوری 📝", callback_data="set_reminder")],
         [InlineKeyboardButton("📝 نمایش تکالیف 📝", callback_data="show_homework")]
     ]
 
@@ -63,10 +64,9 @@ async def start(update: Update, context: CallbackContext) -> None:
         is_admin = cursor.fetchone()
 
         if is_admin:
+            inline_keyboard.append(
+            )
             inline_keyboard.append([InlineKeyboardButton("🟥🟥🟥🟥 دسترسی ادمین ها 🟥🟥🟥🟥", callback_data="None")])
-            inline_keyboard.append([
-                InlineKeyboardButton("📝 ثبت یادآوری 📝", callback_data="set_reminder")
-            ])
             inline_keyboard.append([
                 InlineKeyboardButton("👨‍👦‍👦 ادمین ها 👨‍👦‍👦", callback_data="show_admins"),
                 InlineKeyboardButton("✍ ویرایش تکالیف ✍", callback_data="edit_homework")
@@ -338,7 +338,7 @@ def check_reminders():
                 print(f"Reminder sent to group {chat_id}: {message}")
 
     # زمان تا بررسی بعدی (یک دقیقه)
-    time.sleep(60)
+        time.sleep(60)
 
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
