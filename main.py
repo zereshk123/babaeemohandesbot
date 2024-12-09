@@ -1,5 +1,7 @@
 import sys
 import random
+from datetime import datetime
+import time
 sys.stdout.reconfigure(encoding='utf-8') 
 
 try:
@@ -28,16 +30,17 @@ def auth_db():
             id INTEGER PRIMARY KEY,
             message TEXT NOT NULL
         )''')
-    print("پایگاه داده بررسی شد✅\n")
+    print("database checked✅\n")
 
 
-token = "7237654549:AAHp4XGqrLpJQrBO-tnxSoG6zRpnZMfI6X0"
+token = "7808617162:AAEppm8ctY1YngqGFlVXDZYmE2Sxe3BsQdA"
 link_web_app = "http://alikakaee.ir/bot/"
 waiting_for_message = {}
 admin_creation_state = {}
 admin_edit_homework_state = {}
 admin_del_state = {}
 user_status = {}
+reminder_state = {}
 
 async def start(update: Update, context: CallbackContext) -> None:
     user_id = str(update.effective_user.id)
@@ -61,6 +64,9 @@ async def start(update: Update, context: CallbackContext) -> None:
 
         if is_admin:
             inline_keyboard.append([InlineKeyboardButton("🟥🟥🟥🟥 دسترسی ادمین ها 🟥🟥🟥🟥", callback_data="None")])
+            inline_keyboard.append([
+                InlineKeyboardButton("📝 ثبت یادآوری 📝", callback_data="set_reminder")
+            ])
             inline_keyboard.append([
                 InlineKeyboardButton("👨‍👦‍👦 ادمین ها 👨‍👦‍👦", callback_data="show_admins"),
                 InlineKeyboardButton("✍ ویرایش تکالیف ✍", callback_data="edit_homework")
@@ -302,9 +308,77 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_status[user_id] = {"step": True}
         await query.edit_message_text("هرچی میخوای بنویس من میفرستم برا ادمین😁:")
 
+    elif query.data == "set_reminder":
+        user_id = str(update.effective_user.id)
+        reminder_state[user_id] = {"step": 1}
+
+        await query.edit_message_text("یه تاریخ و زمان برای این یادآوری تنظیم کن:\nدقت کن باید تاریخ و زمان رو دقیقا به همین قالب بفرستی⬇\n'YYYY-MM-DD HH:MM' مثلا '1404-02-15 13:00'")
+        return
+
+
+def check_reminders():
+    while True:
+        now = datetime.now().strftime(f'%Y-%m-%d %H:%M')
+
+        with sqlite3.connect('data.db') as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT chat_id, reminder_time, message FROM reminders')
+            reminders = cursor.fetchall()
+
+        for reminder in reminders:
+            chat_id, reminder_time, message = reminder
+            if reminder_time == now:
+                # ارسال پیام به گروه
+                bot.send_message(
+                    chat_id=chat_id, 
+                    text=message
+                )
+                cursor.execute('DELETE FROM reminders WHERE reminder_time = ?', (reminder_time,))
+                conn.commit()
+                print(f"Reminder sent to group {chat_id}: {message}")
+
+    # زمان تا بررسی بعدی (یک دقیقه)
+    time.sleep(60)
+
+
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     text = str(update.effective_message.text)
+
+    #__ فرآیند ذخیره کردن یادآوری  __
+    if user_id in reminder_state:
+
+        if reminder_state[user_id]["step"] == 1:
+            reminder_state[user_id]["datetime"] = update.message.text  # ذخیره تاریخ و زمان
+            reminder_state[user_id]["step"] = 2
+            await update.message.replay_text("خیلی خب...\nحالا متن یادآوری رو بنویس:")
+            return
+
+        elif reminder_state[user_id]["step"] == 2:
+            # دریافت متن یادآوری
+            reminder_state[user_id]["message"] = update.message.text
+            reminder_state[user_id]["step"] = 0  # ریست کردن وضعیت
+
+            #ذخیره کردن یادآوری
+            with sqlite3.connect('data.db') as connection:
+                cursor = connection.cursor()
+                cursor.execute('INSERT INTO reminders (chat_id, reminder_time, message) VALUES (?, ?, ?)', (update.effective_chat.id , reminder_state[user_id]["datetime"], reminder_state[user_id]["message"]))
+                connection.commit()
+
+            inline_keyboard = [
+                [InlineKeyboardButton("🔙 برگشتن", callback_data="back")]
+            ]
+            inline_markup = InlineKeyboardMarkup(inline_keyboard)
+
+            await update.message.reply_text(
+                f"تارییادآوری شما برای تاریخ {reminder_state[user_id]['datetime']} ثبت شد✅",
+                reply_to_message_id=update.effective_message.id,
+                reply_markup=inline_markup
+            )
+
+            del reminder_state[user_id]
+            return
+
 
     #__ فرآیند پشتیبانی  __
     if user_id in user_status:
@@ -631,7 +705,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # --- راه‌اندازی ---
 def main():
-    print("بات راه‌اندازی شد...")
+    print("bot started...")
     app = Application.builder().token(token).build()
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(CommandHandler('start', start))
@@ -646,3 +720,4 @@ def main():
 
 auth_db()
 main()
+check_reminders()
