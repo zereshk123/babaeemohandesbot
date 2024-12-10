@@ -35,7 +35,7 @@ def auth_db():
 
 app = None
 
-token = "8044339469:AAECxqg0nZBdOrY_1IVVrBH4zmRdV5JbIZU"
+token = "7237654549:AAEv2ygfu56Y3_El9D5vgXE4DbusmN18TT0"
 link_web_app = "https://alikakaee.ir/bot/"
 waiting_for_message = {}
 admin_creation_state = {}
