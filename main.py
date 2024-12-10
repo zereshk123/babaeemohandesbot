@@ -330,7 +330,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def check_reminders():
     while True:
         # print("Reminder loop is running...")
+<<<<<<< HEAD
         now = datetime.now().strftime(f'%Y-%m-%d %H:%M')
+=======
+        now = datetime.now().strftime('%Y-%m-%d %H:%M')
+
+        # print(now)
+>>>>>>> afd169bf2f98f0f718fe5b275df293980cd5835d
 
         # print(now)
 
@@ -342,20 +348,33 @@ async def check_reminders():
         for reminder in reminders:
             chat_id, reminder_time, message = reminder
             
+<<<<<<< HEAD
             # print(f"reminder= {reminder_time} && now= {now}")
+=======
+            print(f"reminder= {reminder_time} && now= {now}")
+>>>>>>> afd169bf2f98f0f718fe5b275df293980cd5835d
             
             if reminder_time == now:
                 print(f"Reminder sent to group {chat_id}: {message}")
                 # ارسال پیام به گروه
                 await app.bot.send_message(
+<<<<<<< HEAD
                     chat_id=chat_id,
                     text=f"🔴🔴  یادآوری  🔴🔴\n\n📅 زمان و تاریخ: {reminder_time}\n\n💡 متن یادآوری: \n{message}\n\n🌟 موفق باشید! 🌟"
+=======
+                    chat_id=chat_id, 
+                    text=message
+>>>>>>> afd169bf2f98f0f718fe5b275df293980cd5835d
                 )
                 cursor.execute('DELETE FROM reminders WHERE reminder_time = ?', (reminder_time,))
                 conn.commit()
 
     # زمان تا بررسی بعدی
+<<<<<<< HEAD
         await asyncio.sleep(1)
+=======
+        await asyncio.sleep(2)
+>>>>>>> afd169bf2f98f0f718fe5b275df293980cd5835d
 
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
