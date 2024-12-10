@@ -33,7 +33,7 @@ def auth_db():
     print("database checked✅\n")
 
 
-token = "7692555631:AAEpU6TAxLHSi_yeaH8yQND4aSKiIZNxNks"
+token = "7237654549:AAHp4XGqrLpJQrBO-tnxSoG6zRpnZMfI6X0"
 link_web_app = "https://alikakaee.ir/bot/"
 waiting_for_message = {}
 admin_creation_state = {}
