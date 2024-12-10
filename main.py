@@ -1,4 +1,5 @@
 import sys
+import asyncio
 import random
 from datetime import datetime
 import time
@@ -32,6 +33,7 @@ def auth_db():
         )''')
     print("database checked✅\n")
 
+app = None
 
 token = "7237654549:AAEv2ygfu56Y3_El9D5vgXE4DbusmN18TT0"
 link_web_app = "https://alikakaee.ir/bot/"
@@ -63,7 +65,7 @@ async def start(update: Update, context: CallbackContext) -> None:
         is_admin = cursor.fetchone()
 
         if is_admin:
-            inline_keyboard.append([InlineKeyboardButton("🟥🟥🟥🟥 دسترسی ادمین ها 🟥🟥🟥🟥", callback_data="None")])
+            inline_keyboard.append([InlineKeyboardButton("🟥🟥🟥🟥 دسترسی ادمین ها 🟥🟥🟥🟥", callback_data="no_action")])
             inline_keyboard.append(
                 [InlineKeyboardButton("📝 ثبت یادآوری 📝", callback_data="set_reminder")]
             )
@@ -83,11 +85,12 @@ async def start(update: Update, context: CallbackContext) -> None:
             "سلام ببعی جان...\nچه کمکی از دستم بر میاد؟😁",
             reply_markup=inline_markup
         )
-    elif update.callback_query:  # ویرایش پیام موجود
+    elif update.callback_query:
         await update.callback_query.message.edit_text(
             "سلام ببعی جان...\nچه کمکی از دستم بر میاد؟😁",
             reply_markup=inline_markup
         )
+
 
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -106,7 +109,44 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     elif query.data == "back":
-        await start(update, context)
+        inline_keyboard = [
+            [InlineKeyboardButton("🌐 نمایش اطلاعیه ها 🌐", url=f'{link_web_app}')],
+            [InlineKeyboardButton("📝 نمایش تکالیف 📝", callback_data="show_homework")]
+        ]
+        inline_keyboard.append([
+            InlineKeyboardButton("™ درباره ما ™", callback_data="about_us"),
+            InlineKeyboardButton("👨‍💻 پشتیبانی 👨‍💻", callback_data="talk_admins")
+        ])
+
+        inline_markup = InlineKeyboardMarkup(inline_keyboard)
+
+        #__ دکمه های ادمین __
+        with sqlite3.connect('data.db') as connection:
+            cursor = connection.cursor()
+            cursor.execute('SELECT user_id FROM admins WHERE user_id = ?', (user_id,))
+            is_admin = cursor.fetchone()
+
+            if is_admin:
+                inline_keyboard.append([InlineKeyboardButton("🟥🟥🟥🟥 دسترسی ادمین ها 🟥🟥🟥🟥", callback_data="None")])
+        
+                inline_keyboard.append(
+                    [InlineKeyboardButton("📝 ثبت یادآوری 📝", callback_data="set_reminder")]
+                )
+                inline_keyboard.append([
+                    InlineKeyboardButton("👨‍👦‍👦 ادمین ها 👨‍👦‍👦", callback_data="show_admins"),
+                    InlineKeyboardButton("✍ ویرایش تکالیف ✍", callback_data="edit_homework")
+                ])
+                inline_keyboard.append([
+                    InlineKeyboardButton("➕ افزودن ادمین ➕", callback_data="add_admin"),
+                    InlineKeyboardButton("➖ حذف ادمین ➖", callback_data="del_admin")
+                ])
+
+        inline_markup = InlineKeyboardMarkup(inline_keyboard)
+
+        await query.edit_message_text(
+            "سلام ببعی جان...\nچه کمکی از دستم بر میاد؟😁",
+            reply_markup=inline_markup
+        )
         return
     
     elif query.data == "show_admins":
@@ -288,9 +328,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
 
-def check_reminders():
+async def check_reminders():
     while True:
-        now = datetime.now().strftime(f'%Y-%m-%d %H:%M')
+        # print("Reminder loop is running...")
+        now = datetime.now().strftime('%Y-%m-%d %H:%M')
+
+        # print(now)
 
         with sqlite3.connect('data.db') as conn:
             cursor = conn.cursor()
@@ -299,18 +342,21 @@ def check_reminders():
 
         for reminder in reminders:
             chat_id, reminder_time, message = reminder
+            
+            print(f"reminder= {reminder_time} && now= {now}")
+            
             if reminder_time == now:
+                print(f"Reminder sent to group {chat_id}: {message}")
                 # ارسال پیام به گروه
-                bot.send_message(
+                await app.bot.send_message(
                     chat_id=chat_id, 
                     text=message
                 )
                 cursor.execute('DELETE FROM reminders WHERE reminder_time = ?', (reminder_time,))
                 conn.commit()
-                print(f"Reminder sent to group {chat_id}: {message}")
 
-    # زمان تا بررسی بعدی (یک دقیقه)
-        time.sleep(60)
+    # زمان تا بررسی بعدی
+        await asyncio.sleep(2)
 
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -320,10 +366,26 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     #__ فرآیند ذخیره کردن یادآوری  __
     if user_id in reminder_state:
 
+        inline_keyboard = [[InlineKeyboardButton("🔙 برگشتن", callback_data="back")]]
+        inline_markup = InlineKeyboardMarkup(inline_keyboard)
+
         if reminder_state[user_id]["step"] == 1:
             reminder_state[user_id]["datetime"] = update.message.text  # ذخیره تاریخ و زمان
+            try:
+                datetime.strptime(reminder_state[user_id]["datetime"], '%Y-%m-%d %H:%M')
+
+            except ValueError:
+                await update.message.reply_text(
+                    "❌ فرمت تاریخ/زمان نادرست است. لطفاً به صورت YYYY-MM-DD HH:MM وارد کنید!",
+                    reply_to_message_id=update.effective_message.id,
+                    reply_markup=inline_markup
+                )
+                
+                del reminder_state[user_id]
+                return
+
             reminder_state[user_id]["step"] = 2
-            await update.message.replay_text("خیلی خب...\nحالا متن یادآوری رو بنویس:")
+            await update.message.reply_text("خیلی خب...\nحالا متن یادآوری رو بنویس:")
             return
 
         elif reminder_state[user_id]["step"] == 2:
@@ -676,8 +738,9 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # --- راه‌اندازی ---
-def main():
-    print("bot started...")
+async def run_telegram_bot():
+    print("Telegram bot is initializing...")
+    global app  # استفاده از متغیر گلوبال
     app = Application.builder().token(token).build()
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(CommandHandler('start', start))
@@ -687,9 +750,20 @@ def main():
     # app.add_handler(CommandHandler('edit', edit))
     app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), echo))
 
-    app.run_polling()
+    print("Telegram bot is starting polling...")
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling()
+    print("Telegram bot is running!")
 
+async def main():
+    await asyncio.gather(
+        run_telegram_bot(),
+        check_reminders()
+    )
 
 auth_db()
-main()
-check_reminders()
+asyncio.run(main())
+
+# main()
+# check_reminders()
