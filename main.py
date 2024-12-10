@@ -2,7 +2,6 @@ import sys
 import asyncio
 import random
 from datetime import datetime
-import time
 sys.stdout.reconfigure(encoding='utf-8') 
 
 try:
@@ -331,7 +330,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def check_reminders():
     while True:
         # print("Reminder loop is running...")
-        now = datetime.now().strftime('%Y-%m-%d %H:%M')
+        now = datetime.now().strftime(f'%Y-%m-%d %H:%M')
 
         # print(now)
 
@@ -343,20 +342,20 @@ async def check_reminders():
         for reminder in reminders:
             chat_id, reminder_time, message = reminder
             
-            print(f"reminder= {reminder_time} && now= {now}")
+            # print(f"reminder= {reminder_time} && now= {now}")
             
             if reminder_time == now:
                 print(f"Reminder sent to group {chat_id}: {message}")
                 # ارسال پیام به گروه
                 await app.bot.send_message(
-                    chat_id=chat_id, 
-                    text=message
+                    chat_id=chat_id,
+                    text=f"🔴🔴  یادآوری  🔴🔴\n\n📅 زمان و تاریخ: {reminder_time}\n\n💡 متن یادآوری: \n{message}\n\n🌟 موفق باشید! 🌟"
                 )
                 cursor.execute('DELETE FROM reminders WHERE reminder_time = ?', (reminder_time,))
                 conn.commit()
 
     # زمان تا بررسی بعدی
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
 
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -405,7 +404,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             inline_markup = InlineKeyboardMarkup(inline_keyboard)
 
             await update.message.reply_text(
-                f"تارییادآوری شما برای تاریخ {reminder_state[user_id]['datetime']} ثبت شد✅",
+                f"یادآوری شما برای تاریخ {reminder_state[user_id]['datetime']} ثبت شد✅",
                 reply_to_message_id=update.effective_message.id,
                 reply_markup=inline_markup
             )
