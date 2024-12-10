@@ -1,19 +1,20 @@
-import sys
 import asyncio
 import random
+import sqlite3
 from datetime import datetime
+import sys
 sys.stdout.reconfigure(encoding='utf-8') 
 
 try:
     from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
     from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters , CallbackQueryHandler, CallbackContext, Updater
 except ImportError:
-    print("لطفاً کتابخانه python-telegram-bot را نصب کنید: pip install python-telegram-bot")
+    print("please install 'python-telegram-bot' library => pip install python-telegram-bot")
 
 try:
-    import sqlite3
+    import jdatetime
 except ImportError:
-    print("لطفاً کتابخانه sqlite3 را نصب کنید: pip install sqlite3")
+    print("please install 'jdatetime' library => pip install jdatetime")
 
 
 # --- دیتابیس ---
@@ -34,7 +35,7 @@ def auth_db():
 
 app = None
 
-token = "7237654549:AAEv2ygfu56Y3_El9D5vgXE4DbusmN18TT0"
+token = "8044339469:AAECxqg0nZBdOrY_1IVVrBH4zmRdV5JbIZU"
 link_web_app = "https://alikakaee.ir/bot/"
 waiting_for_message = {}
 admin_creation_state = {}
@@ -323,14 +324,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = str(update.effective_user.id)
         reminder_state[user_id] = {"step": 1}
 
-        await query.edit_message_text("یه تاریخ و زمان برای این یادآوری تنظیم کن:\nدقت کن باید تاریخ و زمان رو دقیقا به همین قالب بفرستی⬇\n'YYYY-MM-DD HH:MM' مثلا '1404-02-15 13:00'")
+        await query.edit_message_text("یه تاریخ و زمان برای این یادآوری تنظیم کن:\nدقت کن باید تاریخ و زمان رو دقیقا به همین قالب بفرستی⬇\nYYYY-MM-DD HH:MM")
         return
 
 
 async def check_reminders():
     while True:
-        now = datetime.now().strftime('%Y-%m-%d %H:%M')
-
+        now = jdatetime.datetime.now()
+        now = now.strftime("%Y-%m-%d %H:%M")
 
         with sqlite3.connect('data.db') as conn:
             cursor = conn.cursor()
@@ -340,14 +341,15 @@ async def check_reminders():
         for reminder in reminders:
             chat_id, reminder_time, message = reminder
             
-            # print(f"reminder= {reminder_time} && now= {now}")
+            print(f"reminder= {reminder_time} && now= {now}")
             
             if reminder_time == now:
                 print(f"Reminder sent to group {chat_id}: {message}")
-                # ارسال پیام به گروه
+
+                times = reminder_time.split(" ")
                 await app.bot.send_message(
                     chat_id=chat_id,
-                    text=f"🔴🔴  یادآوری  🔴🔴\n\n📅 زمان و تاریخ: {reminder_time}\n\n💡 متن یادآوری: \n{message}\n\n🌟 موفق باشید! 🌟"
+                    text=f"🔴🔴 یادآوری 🔴🔴\n\n📅 تاریخ یادآوری: {times[0]}\n🕣 زمان یادآوری: {times[1]}\n\n💡 متن یادآوری: \n{message}\n\n🌟 موفق باشید! 🌟"
                 )
                 cursor.execute('DELETE FROM reminders WHERE reminder_time = ?', (reminder_time,))
                 conn.commit()
@@ -385,10 +387,10 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("خیلی خب...\nحالا متن یادآوری رو بنویس:")
             return
 
+
         elif reminder_state[user_id]["step"] == 2:
             # دریافت متن یادآوری
             reminder_state[user_id]["message"] = update.message.text
-            reminder_state[user_id]["step"] = 0  # ریست کردن وضعیت
 
             #ذخیره کردن یادآوری
             with sqlite3.connect('data.db') as connection:
@@ -401,15 +403,16 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]
             inline_markup = InlineKeyboardMarkup(inline_keyboard)
 
+            times = reminder_state[user_id]['datetime'].split(" ")
+
             await update.message.reply_text(
-                f"یادآوری شما برای تاریخ {reminder_state[user_id]['datetime']} ثبت شد✅",
+                f"یادآوری شما برای تاریخ {times[0]} و ساعت {times[1]} ثبت شد✅",
                 reply_to_message_id=update.effective_message.id,
                 reply_markup=inline_markup
             )
 
             del reminder_state[user_id]
             return
-
 
     #__ فرآیند پشتیبانی  __
     if user_id in user_status:
@@ -620,10 +623,10 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         None
         
-        inline_keyboard = [
-            [InlineKeyboardButton("🔙 برگشتن", callback_data="back")]
-        ]
-        inline_markup = InlineKeyboardMarkup(inline_keyboard)
+        # inline_keyboard = [
+        #     [InlineKeyboardButton("🔙 برگشتن", callback_data="back")]
+        # ]
+        # inline_markup = InlineKeyboardMarkup(inline_keyboard)
 
         # await context.bot.send_message(
         #     chat_id=update.effective_chat.id,
@@ -761,6 +764,3 @@ async def main():
 
 auth_db()
 asyncio.run(main())
-
-# main()
-# check_reminders()
