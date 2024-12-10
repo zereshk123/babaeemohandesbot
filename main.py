@@ -6,6 +6,12 @@ import sys
 sys.stdout.reconfigure(encoding='utf-8') 
 
 try:
+    import pytz
+    tehran_tz = pytz.timezone('Asia/Tehran')
+except ImportError:
+    print("please install 'pytz' library => pip install pytz")
+
+try:
     from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
     from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters , CallbackQueryHandler, CallbackContext, Updater
 except ImportError:
@@ -330,7 +336,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def check_reminders():
     while True:
-        now = jdatetime.datetime.now()
+        now = jdatetime.datetime.now(tehran_tz)
         now = now.strftime("%Y-%m-%d %H:%M")
 
         with sqlite3.connect('data.db') as conn:
